@@ -1,0 +1,146 @@
+<%@ page language="java" import="java.util.*" pageEncoding="UTF-8"%>
+<%
+String path = request.getContextPath();
+String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.getServerPort()+path+"/";
+%>
+<%@taglib prefix="s" uri="/struts-tags" %>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <base href="<%=basePath%>">
+    
+    <title> 电子相册系统 </title>
+	<meta http-equiv="pragma" content="no-cache">
+	<meta http-equiv="cache-control" content="no-cache">
+	<meta http-equiv="expires" content="0">    
+	<meta http-equiv="keywords" content="keyword1,keyword2,keyword3">
+	<meta http-equiv="description" content="This is my page">
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<link rel="stylesheet" href="css/album.css" type="text/css" />
+	<link rel="stylesheet" href="css/jquery-ui.min.css" type="text/css" />
+	<script type="text/javascript" src="js/jquery-1.11.1.min.js"></script>
+	<script type="text/javascript" src="js/jquery-ui.min.js"></script>
+	<script type="text/javascript" src="js/jquery.form.js"></script>
+	<script type="text/javascript" src="js/album.js"></script>
+  </head>
+  
+  <body class="flora">
+    <table width="780" border="0" cellspacing="1" align="center">
+<caption><h3>电子相册系统</h3></caption>
+<tr>
+<td height="60" colspan="2">
+<s:if test="#session.user == null">
+<!-- 没有登录显示下面div元素 -->
+<div id="noLogin">
+<!-- 这里是注册/登录的表格 -->
+<table width="100%" border="0" cellspacing="0">
+<tr>
+	<td width="38%">用户名：
+		<input id="user" type="text" name="user.name" style="width:100px;"/><span id="validateName"></span></td>
+	<td width="38%">密&nbsp;&nbsp;码：
+		<input id="pass" type="password" name="user.pass" /></td>
+	<td width="24%">没有账号，请<a href="javascript:void(0);"
+		onclick="changeRegist();">注册</a>！<br/>
+		已有账号，请<a href="javascript:void(0);" onclick="changeLogin();">登陆</a>！	
+	</td>
+</tr>
+<tr>
+	<td colspan="5">
+	<div id="loginDiv" align="center">
+	<input id="login" type="button" onclick="proLogin();" style="cursor:pointer" value="登陆" />
+	<input id="resetLogin" type="button" onclick="reset();" style="cursor:pointer" value="重设" />
+	</div>
+	<div id="registDiv" align="center" style="display:none">
+	<a href="javascript:void(0)" onclick="validateName();">验证用户名是否可用</a>
+	<input id="regist" type="button" style="cursor:pointer" onclick="regist();" value="注册" />
+	<input id="resetRegist" type="button" style="cursor:pointer" onclick="reset();" value="重设" />
+	</div>
+	</td>
+</tr>
+</table>
+</div>
+</s:if>
+<s:else>
+<!-- 已经登录显示下面div元素 -->
+<div id="hasLogin" align="center">
+	欢迎<span id="username" style="color:blue"><s:property value="#session.user.name"/></span>，您已经登陆成功，下面是您的相册，您也可以<a href="javascript:void(0);" 
+		onclick="openUpload();">增加相片</a>
+	
+</div>
+<div>
+<div style="float:left">
+<a href="javascript:void(0)" onclick="viewUsers();">显示所有用户</a>
+</div>
+<div style="float:right">
+<a href="javascript:void(0)" onclick="logout();">退出登陆</a>
+</div>
+</div>
+<br/>
+<div style="display:none" id="users"></div>
+</s:else>
+</td>
+</tr>
+<tr>
+	<!-- 显示相片列表的元素 -->
+	<td width="120" height="440" valign="top" style="word-break:break-all">
+	<div align="center"><h3>相片列表</h3></div>
+	<div id="list" align="center">
+		<s:iterator value="#session.user.photos">
+			<li>
+			<a href="javascript:void(0);" onclick="showImg('/<s:property value="#session.user.name"/>/<s:property value="fileName"/>','<s:property value="title"/>','<s:property value="id"/>');">
+			<s:property value="title"/></a>
+			</li>
+		</s:iterator>
+	</div>
+
+	</td>
+	<!-- 显示相片的元素 -->
+	<td width="660" align="center" valign="middle">
+	<div>
+		<span style="font-family:黑体;font-size:20px;align:center" id="imageTitle">title</span>
+		<div style="float:right"><a href="javascript:void(0)" id="delete" style="display:none" onclick="deletePhoto();">删除</a></div>
+		<input type="hidden" name="photo.id" id="photoId">
+	</div>
+		<div style="width:640px;height:430px;overflow:auto">
+			<img alt="当前相片" height="100%"  id="show" onload="loaded();"></img>
+			<img alt="正在加载" height="100%" src="loading.jpg" style="display:none" id="loading"></img>
+		</div>
+	</td>
+</tr>
+</table>
+<div align="center">
+All Rights Reserved.&copy; 
+<a href="http://www.crazyjava.org">http://www.crazyjava.org</a><br />
+版权所有 Copyright&copy;2010 Yeeku.H.Lee <br />
+如有任何问题和建议，请登录
+<a href="http://www.crazyjava.org">http://www.crazyjava.org</a><br />
+建议您使用1024*768分辨率，IE6.0以上版本使用本系统!
+</div>
+<div id="uploadDiv" style="display:none">
+<form action="proUpload" method="post" id="uploadForm" enctype="multipart/form-data">
+<table width="400" border="0" cellspacing="1" cellpadding="10">
+<caption>上传图片</caption>
+<tr>
+	<td height="25">图片标题：</td>
+	<td><input id="title" name="photo.title" type="text" />
+	<div style="color:blue">若不输入标题，则标题默认为文件名</div></td>
+</tr>
+<tr>
+	<td height="25">浏览图片：</td>
+	<td><input id="image" name="image" type="file" /><div style="color:red" id="error"></div></td>
+	
+</tr>
+<tr>
+	<td colspan="2" align="center">
+	<input type="button" value="上传" style="cursor:pointer" id="upload" onclick="proUpload();" />
+	<input type="reset" value="重设" style="cursor:pointer" />
+	
+	</td>
+</tr> 
+</table>
+</form>
+</div>
+<div id="tipDiv" style="display:none">
+</div>
+  </body>
+</html>
